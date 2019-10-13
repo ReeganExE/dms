@@ -59,7 +59,7 @@ func (me *contentDirectoryService) cdsObjectToUpnpavObject(cdsObject object, fil
 		return
 	}
 	if !mimeType.IsMedia() {
-		log.Printf("%s ignored: non-media file (%s)", cdsObject.FilePath(), mimeType)
+		//log.Printf("%s ignored: non-media file (%s)", cdsObject.FilePath(), mimeType)
 		return
 	}
 	iconURI := (&url.URL{
@@ -71,6 +71,7 @@ func (me *contentDirectoryService) cdsObjectToUpnpavObject(cdsObject object, fil
 		}.Encode(),
 	}).String()
 	obj.Icon = iconURI
+	obj.Icon = "https://img01.mgo-images.com/image/thumbnail/v2/content/MMVAF76018A477C2826A4EC8747C40B7BE27.jpeg"
 	// TODO(anacrolix): This might not be necessary due to item res image
 	// element.
 	obj.AlbumArtURI = iconURI
@@ -139,16 +140,18 @@ func (me *contentDirectoryService) cdsObjectToUpnpavObject(cdsObject object, fil
 		}
 	}
 	if mimeType.IsVideo() || mimeType.IsImage() {
+		//url, _ := url.Parse("https://img01.mgo-images.com/image/thumbnail/v2/content/MMVAF76018A477C2826A4EC8747C40B7BE27.jpeg")
 		item.Res = append(item.Res, upnpav.Resource{
-			URL: (&url.URL{
-				Scheme: "http",
-				Host:   host,
-				Path:   iconPath,
-				RawQuery: url.Values{
-					"path": {cdsObject.Path},
-					"c":    {"jpeg"},
-				}.Encode(),
-			}).String(),
+			URL: "https://img01.mgo-images.com/image/thumbnail/v2/content/MMVAF76018A477C2826A4EC8747C40B7BE27.jpeg",
+			//URL: (&url.URL{
+			//	Scheme: "http",
+			//	Host:   host,
+			//	Path:   iconPath,
+			//	RawQuery: url.Values{
+			//		"path": {cdsObject.Path},
+			//		"c":    {"jpeg"},
+			//	}.Encode(),
+			//}).String(),
 			ProtocolInfo: "http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN",
 		})
 	}
@@ -224,10 +227,12 @@ func (me *contentDirectoryService) Handle(action string, argsXML []byte, r *http
 		if err := xml.Unmarshal([]byte(argsXML), &browse); err != nil {
 			return nil, err
 		}
+		fmt.Printf("%s\n", argsXML)
 		obj, err := me.objectFromID(browse.ObjectID)
 		if err != nil {
 			return nil, upnp.Errorf(upnpav.NoSuchObjectErrorCode, err.Error())
 		}
+		fmt.Println(browse.BrowseFlag)
 		switch browse.BrowseFlag {
 		case "BrowseDirectChildren":
 			objs, err := me.readContainer(obj, host, userAgent)

@@ -82,8 +82,26 @@ type Device struct {
 	Manufacturer string `xml:"manufacturer"`
 	ModelName    string `xml:"modelName"`
 	UDN          string
-	IconList     []Icon    `xml:"iconList>icon"`
-	ServiceList  []Service `xml:"serviceList>service"`
+	IconList     []Icon       `xml:"iconList>icon"`
+	ServiceList  []Service    `xml:"serviceList>service"`
+	XDLNADOC     []DLNADOC    `xml:"dlna:X_DLNADOC"`
+	ProductCap   ProductCap   `xml:"sec:ProductCap"`
+	XProductCap  X_ProductCap `xml:"sec:X_ProductCap"`
+}
+
+type X_ProductCap struct {
+	Text string `xml:",chardata"`
+	Sec  string `xml:"xmlns:sec,attr"`
+}
+
+type ProductCap struct {
+	Text string `xml:",chardata"`
+	Sec  string `xml:"xmlns:sec,attr"`
+}
+
+type DLNADOC struct {
+	Text string `xml:",chardata"`
+	Dlna string `xml:"xmlns:dlna,attr"`
 }
 
 type DeviceDesc struct {

@@ -250,6 +250,18 @@ func (me *Server) handle(buf []byte, sender *net.UDPAddr) {
 	if req.Method != "M-SEARCH" || req.Header.Get("man") != `"ssdp:discover"` {
 		return
 	}
+
+	fmt.Println("method:", req.Method)
+	fmt.Println("Sender:", sender.IP)
+	for k, v := range req.Header {
+		fmt.Println(k, v)
+	}
+
+	fmt.Println("--------------")
+
+	//dt, _ := httputil.DumpRequest(req, false)
+	//fmt.Printf("%s", dt)
+
 	var mx uint
 	if req.Header.Get("Host") == AddrString {
 		mxHeader := req.Header.Get("mx")
@@ -273,7 +285,10 @@ func (me *Server) handle(buf []byte, sender *net.UDPAddr) {
 		}
 		return nil
 	}(req.Header.Get("st"))
-	for _, ip := range func() (ret []net.IP) {
+	//if types == nil {
+	//	types = me.allTypes()
+	//}
+	ifs := func() (ret []net.IP) {
 		addrs, err := me.Interface.Addrs()
 		if err != nil {
 			panic(err)
@@ -295,11 +310,14 @@ func (me *Server) handle(buf []byte, sender *net.UDPAddr) {
 			}
 		}
 		return
-	}() {
+	}()
+
+	for _, ip := range ifs {
 		for _, type_ := range types {
 			resp := me.makeResponse(ip, type_, req)
-			delay := time.Duration(rand.Int63n(int64(time.Second) * int64(mx)))
-			me.delayedSend(delay, resp, sender)
+			fmt.Println("mx", mx)
+			//delay := time.Duration(rand.Int63n(int64(time.Second) * int64(mx)))
+			me.send(resp, sender)
 		}
 	}
 }
@@ -311,14 +329,19 @@ func (me *Server) makeResponse(ip net.IP, targ string, req *http.Request) (ret [
 		ProtoMinor: 1,
 		Header:     make(http.Header),
 		Request:    req,
+		ContentLength: -1,
+		Close: false,
 	}
 	for _, pair := range [...][2]string{
-		{"CACHE-CONTROL", fmt.Sprintf("max-age=%d", 5*me.NotifyInterval/2/time.Second)},
+		{"CACHE-CONTROL", fmt.Sprintf("max-age=%d", 1000*5*me.NotifyInterval/2/time.Second)},
 		{"EXT", ""},
 		{"LOCATION", me.Location(ip)},
-		{"SERVER", me.Server},
+		{"SERVER", "Linux/i686 UPnP/1,0 DLNADOC/1.50 LGE WebOS TV/Version 0.9"},
+		//{"SERVER", me.Server},
 		{"ST", targ},
 		{"USN", me.usnFromTarget(targ)},
+		{"DLNADeviceName.lge.com", "As sdf"},
+		{"Date", time.Now().Format(time.RFC1123)},
 	} {
 		resp.Header.Set(pair[0], pair[1])
 	}
@@ -326,5 +349,7 @@ func (me *Server) makeResponse(ip net.IP, targ string, req *http.Request) (ret [
 	if err := resp.Write(buf); err != nil {
 		panic(err)
 	}
-	return buf.Bytes()
+	response := buf.Bytes()
+	fmt.Printf("Response:\n%s\n", response)
+	return response
 }
