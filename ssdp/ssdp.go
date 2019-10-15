@@ -251,13 +251,13 @@ func (me *Server) handle(buf []byte, sender *net.UDPAddr) {
 		return
 	}
 
-	fmt.Println("method:", req.Method)
-	fmt.Println("Sender:", sender.IP)
-	for k, v := range req.Header {
-		fmt.Println(k, v)
-	}
-
-	fmt.Println("--------------")
+	//log.Println("method:", req.Method)
+	//log.Println("Sender:", sender.IP)
+	//for k, v := range req.Header {
+	//	log.Println(k, v)
+	//}
+	//
+	//fmt.Println("--------------")
 
 	//dt, _ := httputil.DumpRequest(req, false)
 	//fmt.Printf("%s", dt)

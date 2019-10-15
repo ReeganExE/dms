@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/anacrolix/dms/dlna"
@@ -71,10 +70,11 @@ func (me *contentDirectoryService) cdsObjectToUpnpavObject(cdsObject object, fil
 		}.Encode(),
 	}).String()
 	obj.Icon = iconURI
-	obj.Icon = "https://img01.mgo-images.com/image/thumbnail/v2/content/MMVAF76018A477C2826A4EC8747C40B7BE27.jpeg"
+	//obj.Icon = "https://img01.mgo-images.com/image/thumbnail/v2/content/MMVAF76018A477C2826A4EC8747C40B7BE27.jpeg"
 	// TODO(anacrolix): This might not be necessary due to item res image
 	// element.
-	obj.AlbumArtURI = iconURI
+	obj.AlbumArtURI = "https://www.thuvienaz.net/wp-content/uploads/2019/10/peaky-blinders-fifth-season-2019.163453.jpg"
+	//obj.AlbumArtURI =  iconURI
 	obj.Class = "object.item." + mimeType.Type() + "Item"
 	var (
 		ffInfo        *ffprobe.Info
@@ -118,14 +118,15 @@ func (me *contentDirectoryService) cdsObjectToUpnpavObject(cdsObject object, fil
 		Res: make([]upnpav.Resource, 0, 2+len(transcodes)),
 	}
 	item.Res = append(item.Res, upnpav.Resource{
-		URL: (&url.URL{
-			Scheme: "http",
-			Host:   host,
-			Path:   resPath,
-			RawQuery: url.Values{
-				"path": {cdsObject.Path},
-			}.Encode(),
-		}).String(),
+		URL: "http://192.168.1.111/fshare/VS3RD8RWXQNP",
+		//URL: (&url.URL{
+		//	Scheme: "http",
+		//	Host:   host,
+		//	Path:   resPath,
+		//	RawQuery: url.Values{
+		//		"path": {cdsObject.Path},
+		//	}.Encode(),
+		//}).String(),
 		ProtocolInfo: fmt.Sprintf("http-get:*:%s:%s", mimeType, dlna.ContentFeatures{
 			SupportRange: true,
 		}.String()),
@@ -161,26 +162,33 @@ func (me *contentDirectoryService) cdsObjectToUpnpavObject(cdsObject object, fil
 
 // Returns all the upnpav objects in a directory.
 func (me *contentDirectoryService) readContainer(o object, host, userAgent string) (ret []interface{}, err error) {
-	sfis := sortableFileInfoSlice{
-		// TODO(anacrolix): Dig up why this special cast was added.
-		FoldersLast: strings.Contains(userAgent, `AwoX/1.1`),
+	//sfis := sortableFileInfoSlice{
+	//	// TODO(anacrolix): Dig up why this special cast was added.
+	//	FoldersLast: strings.Contains(userAgent, `AwoX/1.1`),
+	//}
+	//sfis.fileInfoSlice, err = o.readDir()
+	//if err != nil {
+	//	return
+	//}
+	//sort.Sort(sfis)
+	//for _, fi := range sfis.fileInfoSlice {
+	//	child := object{path.Join(o.Path, fi.Name()), me.RootObjectPath}
+	//	obj, err := me.cdsObjectToUpnpavObject(child, fi, host, userAgent)
+	//	if err != nil {
+	//		log.Printf("error with %s: %s", child.FilePath(), err)
+	//		continue
+	//	}
+	//	if obj != nil {
+	//		ret = append(ret, obj)
+	//	}
+	//}
+
+	items := newFshareCdsObject()
+	ret = make([]interface{}, len(items))
+	for k, v := range items {
+		ret[k] = v
 	}
-	sfis.fileInfoSlice, err = o.readDir()
-	if err != nil {
-		return
-	}
-	sort.Sort(sfis)
-	for _, fi := range sfis.fileInfoSlice {
-		child := object{path.Join(o.Path, fi.Name()), me.RootObjectPath}
-		obj, err := me.cdsObjectToUpnpavObject(child, fi, host, userAgent)
-		if err != nil {
-			log.Printf("error with %s: %s", child.FilePath(), err)
-			continue
-		}
-		if obj != nil {
-			ret = append(ret, obj)
-		}
-	}
+
 	return
 }
 
@@ -213,6 +221,7 @@ func (me *contentDirectoryService) objectFromID(id string) (o object, err error)
 func (me *contentDirectoryService) Handle(action string, argsXML []byte, r *http.Request) (map[string]string, error) {
 	host := r.Host
 	userAgent := r.UserAgent()
+	log.Println("Action: ", action)
 	switch action {
 	case "GetSystemUpdateID":
 		return map[string]string{
@@ -232,7 +241,7 @@ func (me *contentDirectoryService) Handle(action string, argsXML []byte, r *http
 		if err != nil {
 			return nil, upnp.Errorf(upnpav.NoSuchObjectErrorCode, err.Error())
 		}
-		fmt.Println(browse.BrowseFlag)
+		log.Println("browse.BrowseFlag", browse.BrowseFlag)
 		switch browse.BrowseFlag {
 		case "BrowseDirectChildren":
 			objs, err := me.readContainer(obj, host, userAgent)
@@ -254,6 +263,9 @@ func (me *contentDirectoryService) Handle(action string, argsXML []byte, r *http
 			if err != nil {
 				return nil, err
 			}
+			//log.Printf("Result:\n%s\n", result)
+			log.Println("All objs")
+			PrintXML(objs)
 			return map[string]string{
 				"TotalMatches":   fmt.Sprint(totalMatches),
 				"NumberReturned": fmt.Sprint(len(objs)),

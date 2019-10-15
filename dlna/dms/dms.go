@@ -11,7 +11,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"net/http/pprof"
 	"net/url"
 	"os"
@@ -542,6 +541,9 @@ func (me *Server) serviceControlHandler(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 	soapActionString := r.Header.Get("SOAPACTION")
+
+	dumpReqest(r)
+
 	soapAction, err := upnp.ParseActionHTTPHeader(soapActionString)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -565,6 +567,7 @@ func (me *Server) serviceControlHandler(w http.ResponseWriter, r *http.Request) 
 		}
 		return marshalSOAPResponse(soapAction, respArgs), 200
 	}()
+	//log.Printf("soapRespXML\n%s\n", soapRespXML)
 	bodyStr := fmt.Sprintf(`<?xml version="1.0" encoding="utf-8" standalone="yes"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>%s</s:Body></s:Envelope>`, soapRespXML)
 	w.WriteHeader(code)
 	if _, err := w.Write([]byte(bodyStr)); err != nil {
@@ -774,12 +777,12 @@ func (server *Server) initMux(mux *http.ServeMux) {
 
 func withLog(handlerFunc http.HandlerFunc) http.HandlerFunc {
 	return func(writer http.ResponseWriter, r *http.Request) {
-		request, e := httputil.DumpRequest(r, false)
-		if e == nil {
-			fmt.Printf("From %s\n%s\n", r.RemoteAddr, request)
-		} else {
-			fmt.Println("Failed to dump", e)
-		}
+		//request, e := httputil.DumpRequest(r, false)
+		//if e == nil {
+		//	fmt.Printf("From %s\n%s\n", r.RemoteAddr, request)
+		//} else {
+		//	fmt.Println("Failed to dump", e)
+		//}
 		handlerFunc(writer, r)
 	}
 }
@@ -899,6 +902,7 @@ func didl_lite(chardata string) string {
 		` xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"` +
 		` xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"` +
 		` xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/">` +
+		` xmlns:pv="http://www.pv.com/pvns/">` +
 		chardata +
 		`</DIDL-Lite>`
 }
